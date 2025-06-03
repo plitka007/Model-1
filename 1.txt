@@ -1,0 +1,138 @@
+
+Именить имя hostnamectl set-hostname/hostname hq-cli.au-team.irpo
+
+
+ISP:
+1.nmtui раскидать айпи 172.16.4.1/28
+dnf install iptables-services -y
+nano /etc/sysctl.conf {net.ipv4.ip_forward = 1}
+sysctl -p
+iptables -F
+iptables -t nat -A POSTROUTING -o ens3 -j MASQUERADE
+iptables-save > /etc/sysconfig/iptables
+
+HQ-RTR: 
+
+int isp
+ip add 172.16.4.2/28
+ip nat out
+int vl100,vl200,vl999
+ip add (ip)
+ip nat ins
+ex
+port te0
+service-instance toISP
+encapsulation untagget
+connect ip interface ISP
+ex
+ex
+port te1
+service-instance toVL100
+encapsulation dot1q 100
+rewrite pop 1
+connect ip interface vl100
+ex
+service-instance toVL200
+encapsulation dot1q 200
+rewrite pop 1
+connect ip interface vl200
+service-instance toVL999
+encapsulation dot1q 999
+rewrite pop 1
+connect ip interface vl999
+ex
+do sho run
+
+BR-RTR:
+
+int isp
+ip add 172.16.5.2/28
+ip nat out
+int BRNET  
+ip add 192.168.20.1/27(любой)
+ip nat ins 
+port te0
+service-instance toISP
+encapsulation untagged
+connect ip interface isp
+ex
+ex
+port te1
+service-instance toBRNET
+encapsulation intagget 
+connect ip interface BRNET
+ex
+do sho run
+
+HQ-RTR BR-RTR:
+ex
+ip route 0.0.0.0/0 172.16.4/5.1
+(чекнуть инет)
+
+HQ-RTR BR-RTR:
+username net_admin
+password P@ssw0rd
+role admin
+
+HQ-SRV BR-SRV: 
+useradd sshuser
+passwd sshuser
+usermod sshuser -u 1010
+nano /etc/sudoers
+[ ##Same thing without a password, wheel заменить на sshuser]
+
+vSW:
+ovs-vsctl add-br SW
+ovs-vsctl add-port SW eth0 trunk=100,200,999
+ovs-vsctl add-port SW eth1 tag=100
+ovs-vsctl add-port SW eth2 tag=200
+nano /etc/network/interfaces
+[
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet manual
+
+auto eth1
+iface eth1 inet manual
+
+auto eth2
+iface eth2 inet manual
+]
+/etc/init.d/networking restart
+
+HQ-SRV:
+nmtui айпишки
+192.168.100.5/26
+шлюз 192.168.100.1(айпишник который стоит в ашкью в сторону исп сервера на 100 влан) на бр ртр тот который на роутере смотрит в брнет
+ping 192.168.100.1
+
+HQ-SRV BR-SRV:
+nano /etc/sysconfig/selinux
+[ selinux = permissive ]
+setenforce 0 
+getenforce
+nano /etc/ssh/sshd_config
+[Banner /opt/banner rukami
+Port 2024
+AllowUsers sshuser rukami
+PermitionRootLogin yes
+Maxauth 2]
+nano /opt/banner [Authorized access only]
+systemctl restart sshd
+
+HQ-RTR:
+int tunnel.0
+ip add 10.10.10.1/30
+ip tunnel (айпишник этой ртрки который смотрит в испу потом айпи брртр который смотрит в испу) mode gre
+
+
+
+
+
+
+
+
+
+
