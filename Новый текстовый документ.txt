@@ -1,0 +1,19 @@
+ISP:
+
+BR-RTR:
+1.Именить имя hostnamectl br-rtr.au-team.irpo
+
+HQ-RTR:
+1.Именить имя hostnamectl hq-rtr.au-team.irpo
+
+BR-SRV:
+1.Именить имя hostnamectl set-hostname br-srv.au-team.irpo
+
+HQ-SRV:
+1.Именить имя hostnamectl set-hostname hq-rtr.au-team.irpo
+
+SW:
+
+
+HQ-CLI:
+1.Именить имя hostnamectl set-hostname hq-cli.au-team.irpo
